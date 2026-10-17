@@ -67,16 +67,22 @@ tests/  notebooks/
 
 ## 📊 Resultados
 
-> Preencha após a primeira execução de `make pipeline` (os números dependem da data da coleta).
+Coleta de 17/10/2026 · painel mensal de jan/2010 a out/2026 (202 meses) · erro = mediana do Focus − IPCA realizado (p.p.), IC 95% entre parênteses.
 
-| Horizonte (meses) | n | Viés (p.p.) | MAE (p.p.) |
-|---|---|---|---|
-| 0 | — | — | — |
-| 3 | — | — | — |
-| 6 | — | — | — |
-| 12 | — | — | — |
+| Horizonte (meses) | n | Viés (p.p.) | MAE (p.p.) | RMSE (p.p.) |
+|---|---|---|---|---|
+| 0 | 201 | −0,014 (± 0,015) | 0,082 (± 0,010) | 0,109 |
+| 3 | 198 | −0,062 (± 0,046) | 0,244 (± 0,032) | 0,333 |
+| 6 | 195 | −0,073 (± 0,048) | 0,260 (± 0,033) | 0,351 |
+| 12 | 189 | −0,088 (± 0,049) | 0,265 (± 0,034) | 0,356 |
 
-Interpretação esperada: o erro cresce com o horizonte; viés positivo indica que o Focus superestima o IPCA.
+Tabela completa (horizontes 0 a 12) em `data/gold/focus_error_summary.parquet`.
+
+**Leitura:**
+
+- **O erro cresce com o horizonte, mas satura.** O MAE vai de 0,08 p.p. (mês corrente) a ~0,25 p.p. em 3 meses e praticamente estabiliza a partir daí (0,26 p.p. em 6 e 12 meses); o ganho de informação do Focus se concentra nos primeiros meses.
+- **Viés levemente negativo: o Focus tende a subestimar o IPCA mensal.** Em `h = 0` o viés não se distingue de zero; de `h = 1` em diante o IC 95% exclui zero e o viés se aproxima de −0,09 p.p. em 12 meses. A magnitude é pequena frente ao MAE (cerca de um terço), ou seja, o erro é dominado por dispersão, não por viés.
+- **Ressalva estatística:** os ICs ignoram a autocorrelação dos erros (ver Limitações) e são otimistas; o último mês (out/2026) pode estar incompleto.
 
 ## ☁️ Deploy no Streamlit Community Cloud
 
