@@ -1,0 +1,19 @@
+# Configuração geral do projeto. Validada em tempo de execução por
+# settings (Pydantic): chaves desconhecidas ou valores inválidos
+# fazem a aplicação falhar na inicialização.
+# Não há segredos: as APIs do Banco Central são públicas (sem .env).
+
+ingestion:
+  start_date: 2010-01-01   # início das séries (SGS e Focus)
+  window_years: 5          # tamanho da janela de consulta SGS (a API limita séries diárias a 10 anos)
+  cache_ttl_days: 1        # reutiliza o snapshot bronze se tiver menos de N dias
+  max_retries: 3           # tentativas por janela em caso de falha de rede
+  retry_wait_seconds: 2.0  # espera base entre tentativas (cresce linearmente)
+
+focus:
+  indicator: IPCA          # indicador na API de Expectativas
+  calculation_base: 0      # 0 = últimos 30 dias; 1 = últimos 15 dias (baseCalculo do Focus)
+  max_horizon_months: 12   # horizontes avaliados: 0 (mês corrente) até N meses à frente
+
+log:
+  level: INFO              # DEBUG | INFO | WARNING | ERROR
