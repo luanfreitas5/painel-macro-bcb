@@ -1,0 +1,12 @@
+# Dependências de runtime para o Streamlit Community Cloud (espelha [project.dependencies]
+# do pyproject.toml). Regenere com `make export` após alterar as dependências.
+python-bcb>=0.3.3
+requests>=2.32
+polars>=1.44.1
+pyarrow>=25.0.1
+pandas>=2.3.3
+pydantic>=2.13.5
+pyyaml>=6.0.3
+rich>=15.0.0
+streamlit>=1.40
+plotly>=5.24

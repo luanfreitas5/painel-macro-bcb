@@ -1,0 +1,232 @@
+# =============================================================================
+# pyproject.toml — fonte única de verdade para dependências e configuração de
+# ferramentas. Alinhado ao CLAUDE.md (Data Science Projects).
+# Gerenciador: uv. O lock file (uv.lock) DEVE ser commitado (`make lock`).
+# =============================================================================
+
+[project]
+name = "painel-macro-bcb"
+version = "0.1.0"
+description = "Painel de indicadores macroeconômicos do Banco Central e análise do erro de projeção do Focus para o IPCA."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Luan Freitas", email = "luan.mgf@gmail.com" }]
+keywords = ["bcb", "banco-central", "focus", "ipca", "selic", "macroeconomia", "streamlit", "polars"]
+classifiers = [ # https://pypi.org/classifiers/
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Natural Language :: Portuguese (Brazilian)",
+]
+
+# --- Dependências de runtime (apenas o necessário para o painel) -------------
+dependencies = [
+    # Coleta de dados do Banco Central
+    "python-bcb>=0.3.3",        # cliente SGS e Expectativas (Focus/Olinda) do BCB
+    "requests>=2.32",           # captura de erros de rede no retry da ingestão (já é dep. do python-bcb)
+
+    # Dados: manipulação e armazenamento
+    "polars>=1.44.1",           # transformações (preferido sobre pandas)
+    "pyarrow>=25.0.1",          # leitura/escrita de Parquet e conversão pandas -> polars
+    "pandas>=2.3.3",            # exigido pelo python-bcb (retorno das consultas)
+
+    # Configuração e validação
+    "pydantic>=2.13.5",         # validação das configurações YAML em tempo de execução
+    "pyyaml>=6.0.3",            # leitura de configs/config.yaml
+
+    # Terminal e dashboard
+    "rich>=15.0.0",             # logging e barras de progresso
+    "streamlit>=1.40",          # aplicação web do painel
+    "plotly>=5.24",             # gráficos interativos
+]
+
+[tool.uv]
+# O projeto não é instalado como pacote: `src/` é a raiz de importação (ver
+# CLAUDE.md, "Import style"). O pytest resolve os imports por
+# `pythonpath = ["src"]`; `src/main.py` e `app/streamlit_app.py` ajustam o
+# `sys.path` ao serem executados diretamente.
+package = false
+
+# --- Dependências de desenvolvimento (não publicadas; PEP 735) --------------
+[dependency-groups]
+dev = [
+    # Lint + format
+    "ruff>=0.5",
+    # Type checking (roda no CI, não no pre-commit)
+    "basedpyright>=1.13",
+    # Segurança (roda no CI)
+    "bandit>=1.7",
+    "pip-audit>=2.7",
+    "detect-secrets>=1.5",
+    # Qualidade / complexidade / docstrings
+    "vulture>=2.11",
+    "refurb>=2.0",
+    "xenon>=0.9",
+    "radon>=6.0",
+    "interrogate>=1.7",
+    # Testes
+    "pytest>=8.2",
+    "pytest-cov>=5.0",
+    "hypothesis>=6.100",
+    # Notebooks
+    "nbqa>=1.8",
+    "nbstripout>=0.7",
+    "matplotlib>=3.10.9",           # apenas nos notebooks de exploração
+    "ipykernel>=7.3.0",
+    "jupyterlab>=4.6.3",
+    # Workflow
+    "pre-commit>=3.7",
+    "commitizen>=4.16.5",
+]
+
+
+# =============================================================================
+# RUFF — lint + format (substitui flake8/isort/black)
+# =============================================================================
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests", "app"]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort (organização de imports)
+    "N",      # pep8-naming
+    "UP",     # pyupgrade (sintaxe moderna)
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "SIM",    # flake8-simplify
+    "RET",    # flake8-return
+    "ARG",    # flake8-unused-arguments
+    "PTH",    # flake8-use-pathlib
+    "PD",     # pandas-vet
+    "NPY",    # NumPy-specific rules
+    "PERF",   # perflint
+    "RUF",    # regras específicas do Ruff
+    "PL",     # pylint (subconjunto)
+    "TRY",    # tryceratops
+]
+ignore = [
+    "PLR0913", # muitos argumentos em função — comum em pipelines
+    "PLR2004", # "magic value" em comparação
+    "TRY003",  # mensagem longa em exceção customizada
+    "PLR0917", # muitos parâmetros posicionais
+    "PLC0415", # import fora do topo — usado para importar o python-bcb sob demanda
+    "RUF001",  # caractere ambíguo em string — tipografia pt-BR intencional
+    "RUF002",  # idem, em docstrings
+]
+
+[tool.ruff.lint.isort]
+# `src/` é a raiz de importação: os módulos de primeira parte ficam direto em `src/`.
+known-first-party = ["analysis", "config", "constants", "exceptions", "ingestion", "pipelines", "transformation"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ARG", "PLR2004", "S101"]
+"notebooks/*" = ["E402", "F401", "F821", "NPY002"]
+"app/*" = ["E402"]                      # sys.path precisa ser ajustado antes dos imports
+"src/main.py" = ["E402"]                # idem: `src/` entra no path antes de importar
+
+[tool.ruff.format]
+docstring-code-format = true
+
+# =============================================================================
+# BASEDPYRIGHT — type checking estático (roda no CI)
+# =============================================================================
+[tool.basedpyright]
+pythonVersion = "3.10"
+typeCheckingMode = "standard"
+include = ["src", "tests", "app"]
+extraPaths = ["src"]
+exclude = ["**/__pycache__", "notebooks", "data", "reports", "logs"]
+reportMissingTypeStubs = false
+# python-bcb não publica stubs de tipo.
+reportMissingImports = "warning"
+
+# =============================================================================
+# BANDIT — análise de segurança (roda no CI)
+# =============================================================================
+[tool.bandit]
+exclude_dirs = ["tests", "notebooks", ".venv"]
+
+# =============================================================================
+# VULTURE — detecção de código morto
+# =============================================================================
+[tool.vulture]
+min_confidence = 80
+paths = ["src"]
+exclude = ["notebooks/"]
+
+# =============================================================================
+# REFURB — sugestões de modernização
+# =============================================================================
+[tool.refurb]
+ignore = [
+    "FURB105",
+    "FURB126",
+]
+
+# =============================================================================
+# PYTEST — testes (unit, integração, property-based)
+# =============================================================================
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = [
+    "--strict-markers",
+    "--cov=src",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
+]
+markers = [
+    "smoke: testes rápidos rodados no pre-commit",
+    "integration: testes de pipeline ponta a ponta (sem rede)",
+    "slow: testes lentos (pulados por padrão localmente)",
+]
+
+# =============================================================================
+# COVERAGE — meta de cobertura ≥ 80%
+# =============================================================================
+[tool.coverage.run]
+source = ["src"]
+branch = true
+omit = [
+    "src/main.py",           # orquestração fina (CLI)
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+
+# =============================================================================
+# INTERROGATE — cobertura de docstrings
+# =============================================================================
+[tool.interrogate]
+fail-under = 80
+ignore-init-method = true
+ignore-magic = true
+exclude = ["tests", "notebooks", "docs"]
+
+# =============================================================================
+# COMMITIZEN — Conventional Commits + SemVer + CHANGELOG
+# =============================================================================
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.1.0"
+version_files = [
+    "pyproject.toml:version",
+    "src/config/version.py:__version__",
+]
+tag_format = "v$version"
+update_changelog_on_bump = true
+major_version_zero = true  # remover quando sair do 0.x
