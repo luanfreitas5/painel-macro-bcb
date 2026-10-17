@@ -1,0 +1,15 @@
+# =============================================================================
+# Docs — DESATIVADO por padrão: este projeto não usa MkDocs (a documentação é o
+# README). Mantido apenas com disparo manual; remova o arquivo se não for usar.
+# =============================================================================
+name: Docs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  noop:
+    name: Sem documentação MkDocs
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Este projeto não possui mkdocs.yml."
